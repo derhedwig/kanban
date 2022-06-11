@@ -1,0 +1,5 @@
+db.sqlite3
+*.log
+node_modules
+
+static/styles/styles.css

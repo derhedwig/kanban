@@ -1,0 +1,46 @@
+{% load static %}<!DOCTYPE html>
+<html lang="de" class="h-full">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{% block title %}{% endblock title %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    {% comment %} <link rel="shortcut icon" href="{% static "images/favicon.ico" %}"> {% endcomment %}
+
+    {% block css %}
+      <link rel="stylesheet" type="text/css" href="{% static '@fontsource/inter/variable.css' %}">
+      <link href="{% static 'styles/styles.css' %}" rel="stylesheet">
+    {% endblock %}
+
+    {% block extrahead %}{% endblock %}
+  </head>
+
+  <body class="font-sans text-gray-800 antialiased bg-gray-100" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+   
+    {% comment %} {% block navbar %}{% include "navbar.html" %}{% endblock navbar %}
+
+    {% include "messages.html" %} {% endcomment %}
+
+    {% block outerContent %}
+      <div class="mx-auto max-w-7xl mt-8 md:mt-16 mb-64">
+        <div class="mx-4 md:mx-8">
+          {% block content %}{% endblock content %}
+        </div>
+      </div>
+    {% endblock outerContent %}
+
+    {% comment %} {% block footer %}
+      {% include "footer.html" %}
+    {% endblock footer %} {% endcomment %}
+
+    {% block javascript %}
+      <script type="text/javascript" src="{% static 'scripts/scripts.js' %}"></script>
+      <script type="text/javascript" src="{% static '@alpinejs/focus/dist/cdn.min.js' %}"></script>
+      <script type="text/javascript" src="{% static 'alpinejs/dist/cdn.min.js' %}"></script>
+      <script type="text/javascript" src="{% static 'htmx.org/dist/htmx.min.js' %}"></script>
+      <script type="text/javascript" src="{% static 'sortablejs/Sortable.min.js' %}"></script>
+    {% endblock javascript %}
+  </body>
+
+</html>

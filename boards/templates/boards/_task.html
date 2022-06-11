@@ -1,0 +1,7 @@
+<div class="task relative group bg-white shadow p-3 rounded-md text-sm cursor-grab hover:shadow-lg hover:bg-gray-50"
+hx-get="{% url 'boards:task_modal' task.uuid %}" hx-swap="beforeend" hx-target="body" hx-trigger="click" data-id="{{ task.uuid }}"
+>
+
+    <div class="text-sm">{{ task.label|linebreaksbr }}</div>
+    <input type="hidden" name="{{ list.uuid }}" value="{{ task.uuid }}">
+</div>

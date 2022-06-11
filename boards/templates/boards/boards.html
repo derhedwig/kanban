@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-8">
+    <button class="bg-green-600 text-white font-bold text-sm rounded-md px-4 py-1" hx-get="{% url 'boards:create_board' %}" hx-swap="outerHTML">Neues Brett</button>
+</div>
+
+<div class="flex flex-wrap -mx-4">
+    {% for board in boards %}
+        <div class="relative bg-white shadow p-3 rounded-md h-16 w-48 hover:shadow-xl m-4">
+            <span class="text-sm">{{ board.name }}</span>
+            <a class="absolute inset-0" href="{{ board.get_absolute_url }}"></a>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
