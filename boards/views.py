@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django import forms
 from django.db import transaction
+from django.db.models import Case, When
 
 from boards.models import Board, List, Task
 
@@ -95,27 +96,37 @@ def edit_task(request, board_uuid, task_uuid):
     return render(request, "boards/board_form.html", {"form": form})
 
 
+def preserve_order(uuids):
+    return Case(*[When(uuid=uuid, then=o) for o, uuid in enumerate(uuids)])
+
+
 def move(request, board_uuid):
     # <QueryDict: {'lists': ['3', '4', '5'], '5': ['3'], '4': ['1', '2']>
     from django.db import connection
 
-    list_uuids = request.POST.getlist("lists")
+    connection.queries.clear()
+
     with transaction.atomic():
-        list_order = 1
-        for list_uuid in list_uuids:
-            list = List.objects.get(uuid=list_uuid)
+        list_uuids = request.POST.getlist("lists")
+        lists = List.objects.filter(uuid__in=list_uuids).order_by(
+            preserve_order(list_uuids)
+        )
+        for list_order, list in enumerate(lists):
             list.order = list_order
             list.save()
-            list_order += 1
 
-            task_order = 1
-            task_uuids = request.POST.getlist(list_uuid)
-            for task_uuid in task_uuids:
-                Task.objects.filter(uuid=task_uuid).update(order=task_order, list=list)
-                task_order += 1
+            task_uuids = request.POST.getlist(str(list.uuid))
+            tasks = Task.objects.filter(uuid__in=task_uuids).order_by(
+                preserve_order(task_uuids)
+            )
+            for task_order, task in enumerate(tasks):
+                task.order = task_order
+                task.list = list
+            Task.objects.bulk_update(tasks, ["order", "list_id"])
 
     print(len(connection.queries))
-    print(connection.queries)
+    for query in connection.queries:
+        print(query)
 
     return board(request, board_uuid, partial=True)
 
