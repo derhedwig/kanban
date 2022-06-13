@@ -1,8 +1,9 @@
-from django.http import HttpResponse
+import uuid
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django import forms
-from django.db import transaction
-from django.db.models import Case, When
+from django.db.models import Case, When, Subquery
+from django.views.decorators.http import require_POST
 
 from boards.models import Board, List, Task
 
@@ -36,7 +37,9 @@ def board(request, board_uuid, partial=False):
         Board.objects.all().prefetch_related("lists__tasks"), uuid=board_uuid
     )
     template = "boards/_board.html" if partial else "boards/board.html"
-    return render(request, template, {"board": board})
+    response = render(request, template, {"board": board})
+    response["HX-Retarget"] = "#board"
+    return response
 
 
 class ListForm(forms.ModelForm):
@@ -51,7 +54,7 @@ def create_list(request, board_uuid):
 
     if request.method == "POST" and form.is_valid():
         form.instance.board = board_
-        list = form.save()
+        form.save()
         return board(request, board_uuid, partial=True)
 
     return render(request, "boards/board_form.html", {"form": form})
@@ -100,34 +103,50 @@ def preserve_order(uuids):
     return Case(*[When(uuid=uuid, then=o) for o, uuid in enumerate(uuids)])
 
 
-def move(request, board_uuid):
-    # <QueryDict: {'lists': ['3', '4', '5'], '5': ['3'], '4': ['1', '2']>
-    from django.db import connection
+class MultipleUUIDsField(forms.TypedMultipleChoiceField):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.coerce = uuid.UUID
 
-    connection.queries.clear()
+    def valid_value(self, value):
+        # all choices are okay
+        return True
 
-    with transaction.atomic():
-        list_uuids = request.POST.getlist("lists")
-        lists = List.objects.filter(uuid__in=list_uuids).order_by(
-            preserve_order(list_uuids)
-        )
-        for list_order, list in enumerate(lists):
-            list.order = list_order
-            list.save()
 
-            task_uuids = request.POST.getlist(str(list.uuid))
-            tasks = Task.objects.filter(uuid__in=task_uuids).order_by(
-                preserve_order(task_uuids)
-            )
-            for task_order, task in enumerate(tasks):
-                task.order = task_order
-                task.list = list
-            Task.objects.bulk_update(tasks, ["order", "list_id"])
+class ListMoveForm(forms.Form):
+    list_uuids = MultipleUUIDsField()
 
-    print(len(connection.queries))
-    for query in connection.queries:
-        print(query)
 
+@require_POST
+def list_move(request, board_uuid):
+    form = ListMoveForm(request.POST)
+    if not form.is_valid():
+        return HttpResponseBadRequest(str(form.errors))
+
+    list_uuids = form.cleaned_data["list_uuids"]
+    List.objects.filter(uuid__in=list_uuids).update(order=preserve_order(list_uuids))
+    return board(request, board_uuid, partial=True)
+
+
+class TaskMoveForm(forms.Form):
+    item = forms.UUIDField()
+    from_list = forms.UUIDField()
+    to_list = forms.UUIDField()
+    task_uuids = MultipleUUIDsField()
+
+
+@require_POST
+def task_move(request, board_uuid):
+    form = TaskMoveForm(request.POST)
+    if not form.is_valid():
+        return HttpResponseBadRequest(str(form.errors))
+
+    to_list = form.cleaned_data["to_list"]
+    task_uuids = form.cleaned_data["task_uuids"]
+    Task.objects.filter(uuid__in=task_uuids).update(
+        order=preserve_order(task_uuids),
+        list_id=Subquery(List.objects.filter(uuid=to_list).values("id")),
+    )
     return board(request, board_uuid, partial=True)
 
 

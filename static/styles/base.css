@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.sortable-drag {
+    opacity: 1 !important;
+    @apply border border-gray-200 rotate-3;
+}
+
+.sortable-ghost {
+    @apply bg-slate-300 text-slate-300 shadow-inner;
+}
+
+.sortable-ghost:hover {
+    @apply bg-slate-300 text-slate-300 shadow-inner !important;
+}
+
+.sortable-ghost * {
+    @apply invisible;
+}

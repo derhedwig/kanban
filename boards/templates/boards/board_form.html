@@ -1,12 +1,14 @@
 {% load widget_tweaks %}
 
-<form hx-post="{{ request.path }}" method="POST">
-    <div class="bg-white shadow rounded-md p-4 inline-block">
+<form hx-post="{{ request.path }}">
+    <div class="form bg-white shadow rounded-md p-4 inline-block">
         {% render_field form.name placeholder="Name" class="rounded" autofocus="true" %}
         {% render_field form.label placeholder="Text" class="rounded w-full resize-none text-sm" autofocus="true" rows="1" %}
 
         <div class="mt-4 flex items-center space-x-4">
-            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs px-3 py-2 rounded-md" type="submit">Speichern</button>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs px-3 py-2 rounded-md" type="submit">
+                Speichern
+            </button>
             {% comment %} <button class="text-sm text-gray-600 hover:text-gray-800" type="button">Abbrechen</button> {% endcomment %}
         </div>
     </div>

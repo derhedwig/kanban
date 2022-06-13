@@ -1,14 +1,12 @@
 <div id="board">
     <h1 class="text-xl font-bold mb-8">{{ board.name }}</h1>
-    <form id="moveForm" hx-post="{% url 'boards:move' board.uuid %}" hx-trigger="moved" hx-target="#board" hx-swap="outerHTML">
-        <div class="sortable-lists flex space-x-2 items-start overflow-x-scroll">
-            {% for list in board.lists.all %}
-            {% include "boards/_list.html" %}
-            {% endfor %}
-            <div class="w-64">
-                <button class="create-list-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-200 w-full text-left"
-                    hx-get="{% url 'boards:create_list' board.uuid %}" hx-swap="outerHTML" hx-target="this">+ Liste hinzufügen</button>
-            </div>
+    <div class="sortable-lists flex space-x-2 items-start overflow-x-auto">
+        {% for list in board.lists.all %}
+        {% include "boards/_list.html" %}
+        {% endfor %}
+        <div class="w-64">
+            <button type="button" class="create-list-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-200 w-full text-left"
+                hx-get="{% url 'boards:create_list' board.uuid %}" hx-swap="outerHTML" hx-target="this">+ Liste hinzufügen</button>
         </div>
-    </form>
+    </div>
 </div>

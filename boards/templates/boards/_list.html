@@ -1,6 +1,8 @@
-<div class="list w-64 bg-slate-200 rounded-md px-3 py-1 shrink-0" data-id="{{ list.uuid }}">
+<div class="list w-64 bg-slate-200 rounded-md px-3 py-1 shrink-0" id="{{ list.uuid }}">
     <div class="list-handle cursor-grab flex items-center justify-between">
       <h2 class="text-center text-sm font-bold">{{ list.name }} <span class="inline-block text-xs bg-slate-100 px-1.5 py-0.5 rounded font-normal ml-1">{{ list.tasks.count }}</span></h2>
+
+      {% comment %} three dot menu {% endcomment %}
       <div x-data="{open: false}" class="relative">
         <button type="button" @click="open=!open"
           class="text-gray-500 hover:bg-slate-300 p-2 -mr-2 rounded">
@@ -9,20 +11,19 @@
           </svg>
         </button>
         <div x-show="open" @click.outside="open=false" class="absolute right-0 bg-white rounded-md shadow-md py-2 space-x-2 text-sm z-30">
-          <button class="px-2 py-1 hover:bg-slate-100" hx-post="{% url 'boards:delete_list' board.uuid list.uuid %}" hx-confirm="Sicher?">Löschen</button>
+          <button type="button" class="px-2 py-1 hover:bg-slate-100" hx-post="{% url 'boards:delete_list' board.uuid list.uuid %}" hx-confirm="Sicher?">Löschen</button>
         </div>
       </div>
+
     </div>
 
-    <input type="hidden" name="lists" value="{{ list.uuid }}">
-
-    <div class="space-y-3 sortable-tasks py-4 overflow-y-scroll h-full">
+    <div class="space-y-3 sortable-tasks py-4 overflow-y-auto h-full">
       {% for task in list.tasks.all %}
       {% include "boards/_task.html" %}
       {% endfor %}
     </div>
-
-    <button class="create-task-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-300 w-full text-left"
+    <button type="button" class="create-task-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-300 w-full text-left"
       hx-get="{% url 'boards:create_task' board.uuid list.uuid %}" hx-target="this" hx-swap="outerHTML">+ Aufgabe hinzufügen</button>
+
 
   </div>

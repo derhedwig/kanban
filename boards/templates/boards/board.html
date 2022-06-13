@@ -17,32 +17,50 @@
 {% block javascript %}
 {{ block.super }}
 
+
 <script>
-  htmx.onLoad(function (content) {
-    content.querySelectorAll(".sortable-tasks").forEach(function (sortable) {
-      new Sortable(sortable, {
-        animation: 150,
-        group: "tasks",
-        ghostClass: "border"
-      })
-    })
-
-    content.querySelectorAll(".sortable-lists").forEach(function (sortable) {
-      new Sortable(sortable, {
-        animation: 150,
-        group: "lists",
-        handle: ".list-handle",
-      })
+htmx.onLoad(function (content) {
+  content.querySelectorAll(".sortable-tasks").forEach(function (sortable) {
+    new Sortable(sortable, {
+      forceFallback: true,
+      animation: 0,
+      group: "tasks",
+      ghostClass: "sortable-ghost",
+      dragClass: "sortable-drag",
+      onEnd: function (event) {
+        htmx.ajax("POST", "{% url 'boards:task_move' board.uuid %}", {
+          target: "#board",
+          swap: "outerHTML",
+          values: {
+            from_list: event.from.closest(".list").id,
+            to_list: event.to.closest(".list").id,
+            item: event.item.id,
+            task_uuids: Array.from(event.to.querySelectorAll(".task")).map(div => div.id)
+          }
+        })
+      }
     })
   })
 
-  document.addEventListener("end", function (event) {
-    if (event.item.classList.contains("task")) {
-      let newListId = event.to.parentElement.querySelector("[name='lists']").value
-      event.item.querySelector("[type='hidden']").setAttribute("name", newListId)
-    }
-    moveForm.dispatchEvent(new Event("moved"))
+  content.querySelectorAll(".sortable-lists").forEach(function (sortable) {
+    new Sortable(sortable, {
+      //forceFallback: true,
+      animation: 0,
+      group: "lists",
+      handle: ".list-handle",
+      ghostClass: "sortable-ghost",
+      dragClass: "none",
+      onEnd: function (event) {
+        htmx.ajax("POST", "{% url 'boards:list_move' board.uuid %}", {
+          target: "#board",
+          swap: "outerHTML",
+          values: {
+            list_uuids: Array.from(content.querySelectorAll(".sortable-lists .list")).map(div => div.id)
+          }
+        })
+      }
+    })
   })
-
+})
 </script>
 {% endblock %}

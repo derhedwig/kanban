@@ -31,5 +31,6 @@ urlpatterns = [
         views.task_modal,
         name="task_modal",
     ),
-    path("<uuid:board_uuid>/move", views.move, name="move"),
+    path("<uuid:board_uuid>/list_move", views.list_move, name="list_move"),
+    path("<uuid:board_uuid>/task_move", views.task_move, name="task_move"),
 ]
