@@ -1,6 +1,7 @@
 function autogrow(el) {
     el.style.setProperty('height', 'auto');
     var newHeight = el.offsetHeight + el.scrollHeight - el.clientHeight;
+    if (newHeight == 0) return
     el.style.height = newHeight + "px";
 }
 
