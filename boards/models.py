@@ -23,7 +23,7 @@ class List(models.Model):
     name = models.CharField("Name", max_length=255)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     board = models.ForeignKey(Board, on_delete=models.CASCADE, related_name="lists")
-    order = models.SmallIntegerField(default=1000)
+    order = models.SmallIntegerField(default=1000, db_index=True)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.order})"
@@ -36,7 +36,7 @@ class Task(models.Model):
     label = models.TextField("Beschriftung")
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     list = models.ForeignKey(List, on_delete=models.CASCADE, related_name="tasks")
-    order = models.SmallIntegerField(default=1000)
+    order = models.SmallIntegerField(default=1000, db_index=True)
     description = models.TextField("Beschreibung", blank=True)
 
     def __str__(self) -> str:
