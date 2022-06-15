@@ -1,29 +1,52 @@
-<div class="list w-64 bg-slate-200 rounded-md px-3 py-1 shrink-0" id="{{ list.uuid }}">
+<div class="list w-64 bg-slate-200 rounded-md px-3 pt-1 pb-3 shrink-0" id="{{ list.uuid }}">
     <div class="list-handle cursor-grab flex items-center justify-between">
-      <h2 class="text-center text-sm font-bold">{{ list.name }} <span class="inline-block text-xs bg-slate-100 px-1.5 py-0.5 rounded font-normal ml-1">{{ list.tasks.count }}</span></h2>
+        <h2 class="text-center text-sm font-bold">
+            <span>{{ list.name }}</span>
+            <span class="inline-block text-xs bg-slate-100 px-1.5 py-0.5 rounded font-normal ml-1">{{ list.tasks.count }}</span>
+        </h2>
 
-      {% comment %} three dot menu {% endcomment %}
-      <div x-data="{open: false}" class="relative">
-        <button type="button" @click="open=!open"
-          class="text-gray-500 hover:bg-slate-300 p-2 -mr-2 rounded">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-          </svg>
-        </button>
-        <div x-show="open" @click.outside="open=false" class="absolute right-0 bg-white rounded-md shadow-md py-2 space-x-2 text-sm z-30">
-          <button type="button" class="px-2 py-1 hover:bg-slate-100" hx-post="{% url 'boards:delete_list' board.uuid list.uuid %}" hx-confirm="Sicher?">Löschen</button>
+        {% comment %} three dot menu {% endcomment %}
+        <div x-data="{open: false}" class="relative">
+            <button type="button" @click="open=!open"
+              class="text-gray-500 hover:bg-slate-300 p-2 -mr-2 rounded">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+              </svg>
+            </button>
+            <div x-show="open" @click.outside="open=false" class="absolute right-0 bg-white rounded-md shadow-md py-2 space-x-2 text-sm z-30">
+              <button type="button" class="px-2 py-1 hover:bg-slate-100" hx-post="{% url 'boards:delete_list' board.uuid list.uuid %}" hx-confirm="Sicher?">Löschen</button>
+            </div>
         </div>
-      </div>
 
     </div>
 
     <div class="space-y-3 sortable-tasks py-4 overflow-y-auto h-full">
-      {% for task in list.tasks.all %}
-      {% include "boards/_task.html" %}
-      {% endfor %}
+        {% for task in list.tasks.all %}
+        {% include "boards/_task.html" %}
+        {% endfor %}
     </div>
-    <button type="button" class="create-task-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-300 w-full text-left"
-      hx-get="{% url 'boards:create_task' board.uuid list.uuid %}" hx-target="this" hx-swap="outerHTML">+ Aufgabe hinzufügen</button>
+
+    <div x-data="{open: false}" @keydown.escape.window="open=false">
+        <button type="button" class="create-task-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-300 w-full text-left"
+            @click="open=true; $refs.input.value = ''; $nextTick(() => $refs.input.focus())" x-show="!open">+ Aufgabe hinzufügen</button>
+
+        <form x-show="open" @click.outside="open=false" hx-post="{% url 'boards:create_task' board.uuid list.uuid %}" hx-trigger="submit, keyup[key=='Enter']" hx-target="this">
+            <div class="inline-block"> 
+                <textarea x-ref="input" name="label" rows="1" placeholder="Text der neuen Karte eingeben" required id="id_label"
+                class="bg-white shadow rounded-md p-3 w-full resize-none text-sm focus:ring-green-600 focus:border-none"></textarea>
+                <div class="mt-4 flex items-center space-x-1">
+                    <button class="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-2.5 py-1.5 rounded-md" type="submit">
+                        Speichern
+                    </button>
+                    <button type="button" title="Abbrechen" @click="open=false" class="text-sm text-gray-500 hover:text-gray-700 rounded-full p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+              </div>
+          </div>
+      </form>
+    </div>
 
 
   </div>

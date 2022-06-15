@@ -2,11 +2,28 @@
     <h1 class="text-xl font-bold mb-8">{{ board.name }}</h1>
     <div class="sortable-lists flex space-x-2 items-start overflow-x-auto">
         {% for list in board.lists.all %}
-        {% include "boards/_list.html" %}
+            {% include "boards/_list.html" %}
         {% endfor %}
-        <div class="w-64">
-            <button type="button" class="create-list-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-200 w-full text-left"
-                hx-get="{% url 'boards:create_list' board.uuid %}" hx-swap="outerHTML" hx-target="this">+ Liste hinzufügen</button>
+
+        <div x-data="{open: false}" @keydown.escape.window="open=false" class="w-64">
+            <button type="button" class="create-list-button text-sm text-gray-600 px-3 py-2 rounded-md hover:bg-slate-200 w-full text-left whitespace-nowrap"
+                @click="open=true; $refs.input.value = ''; $nextTick(() => $refs.input.focus())" x-show="!open">+ Liste hinzufügen</button>
+    
+            <form class="create-list-form" x-show="open" @click.outside="open=false" hx-post="{% url 'boards:create_list' board.uuid %}" hx-target="this">
+                <div class="form bg-white shadow rounded-md p-4 inline-block">
+                    <input type="text" hx-trigger="keyup enter" x-ref="input" name="name" class="rounded w-full resize-none text-sm" placeholder="Name" required id="id_label">
+                    <div class="mt-4 flex items-center space-x-1">
+                        <button class="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-2.5 py-1.5 rounded-md" type="submit">
+                            Speichern
+                        </button>
+                        <button type="button" title="Abbrechen" @click="open=false" class="text-sm text-gray-500 hover:text-gray-700 rounded-full p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                  </div>
+              </div>
+          </form>
         </div>
     </div>
 </div>
