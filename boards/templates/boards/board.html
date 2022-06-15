@@ -44,7 +44,7 @@ htmx.onLoad(function (content) {
 
   content.querySelectorAll(".sortable-lists").forEach(function (sortable) {
     new Sortable(sortable, {
-      //forceFallback: true,
+      forceFallback: true,
       animation: 0,
       group: "lists",
       handle: ".list-handle",

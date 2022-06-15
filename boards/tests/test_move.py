@@ -27,70 +27,57 @@ def test_create_list(live_server, driver: WebDriver, board: Board):
     driver.get(f"{live_server.url}{board.get_absolute_url()}")
     driver.find_element(By.CLASS_NAME, "create-list-button").click()
     driver.switch_to.active_element.send_keys("Test Liste")
-    driver.find_element(By.CSS_SELECTOR, "[type='submit']").click()
+    driver.find_element(By.CSS_SELECTOR, ".create-list-form [type='submit']").click()
 
     assert len(driver.find_elements(By.CLASS_NAME, "list")) == 4
     assert List.objects.count() == 4
 
 
-def drag_and_drop(driver: WebDriver, source: WebElement, target: WebElement):
-    driver.execute_script(
-        """
-        const source = arguments[0]
-        const target = arguments[1]
-        let dataTransfer = new DataTransfer
-        source.dispatchEvent(new DragEvent('dragstart', {dataTransfer: dataTransfer}))
-        target.dispatchEvent(new DragEvent('drop', {dataTransfer: dataTransfer}))
-        target.dispatchEvent(new DragEvent('dragend', {dataTransfer: dataTransfer}))
-    """,
-        source,
-        target,
-    )
-
-
 def test_move_list(live_server, driver: WebDriver, board: Board):
     driver.get(f"{live_server.url}{board.get_absolute_url()}")
     lists = List.objects.all()
-    # assert lists[0].order < lists[1].order < lists[2].order
-    time.sleep(2)
+    assert ["Todo", "Doing", "Done"] == [list.name for list in lists]
 
     list_els = driver.find_elements(By.CLASS_NAME, "list")
-    source = list_els[2].find_element(By.CLASS_NAME, "list-handle")
-    target = list_els[0]
+    source = list_els[2].find_element(By.CLASS_NAME, "list-handle h2")
 
-    drag_and_drop(driver, source, target)
+    # drag and drop last list to first list
+    ActionChains(driver).drag_and_drop_by_offset(source, -400, 0).perform()
 
-    # ActionChains(driver).click(source).pause(1).click_and_hold().pause(
-    #     1
-    # ).move_by_offset(-400, 0).release().perform()
-    # ActionChains(driver).drag_and_drop_by_offset(source, -400, 0).perform()
-    # ActionChains(driver).drag_and_drop(source, target).perform()
+    # re-get page
+    driver.get(f"{live_server.url}{board.get_absolute_url()}")
 
-    # time.sleep(3)
+    # check list order visually
+    list_els = driver.find_elements(By.CLASS_NAME, "list h2 span:first-of-type")
+    assert ["Done", "Todo", "Doing"] == [list.text for list in list_els]
 
-    # assert lists[2].order < lists[1].order < lists[0].order
-
-
-def test_test_move(driver: WebDriver):
-    driver.get("http://the-internet.herokuapp.com/drag_and_drop")
-    a = driver.find_element(By.ID, "column-a")
-    b = driver.find_element(By.ID, "column-b")
-    ActionChains(driver).drag_and_drop(a, b).perform()
+    # check list order in db
+    lists = List.objects.all()
+    assert ["Done", "Todo", "Doing"] == [list.name for list in lists]
 
 
 def test_move_tasks_from_list_to_list(live_server, driver: WebDriver, board):
     task = Task.objects.create(label="Test Task", list=board.lists.first())
+
     driver.get(f"{live_server.url}{board.get_absolute_url()}")
-
-    time.sleep(3)
-
     task_element = driver.find_element(By.CLASS_NAME, "task")
     list_elements = driver.find_elements(By.CSS_SELECTOR, ".list .sortable-tasks")
 
-    action = ActionChains(driver)
-    action.drag_and_drop(task_element, list_elements[1]).perform()
+    # drag and drop to second list
+    ActionChains(driver).drag_and_drop(task_element, list_elements[1]).perform()
 
-    # driver.get(f"{live_server.url}{board.get_absolute_url()}")
+    # re-get page
+    driver.get(f"{live_server.url}{board.get_absolute_url()}")
 
+    # Test Task is now visibly in the second list
+    list_elements = driver.find_elements(By.CSS_SELECTOR, ".list .sortable-tasks")
+    "Test Task" in list_elements[1].text
+
+    # also in the db
     task.refresh_from_db()
-    assert task.list == board.lists.all()[1]
+    assert task.list.name == board.lists.all()[1].name
+
+
+# TODO: reorder task in a list
+
+# TODO: move task from list to list to a specific position
