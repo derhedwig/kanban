@@ -2,7 +2,8 @@ import uuid
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django import forms
-from django.db.models import Case, When, Subquery
+from django.db.models import Case, When, Subquery, Q, F
+from django.db import models
 from django.views.decorators.http import require_POST
 
 from boards.models import Board, List, Task
@@ -73,7 +74,6 @@ class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = ["label", "description"]
-        widgets = {"label": forms.TextInput}
 
 
 def create_task(request, board_uuid, list_uuid):
@@ -99,10 +99,6 @@ def edit_task(request, board_uuid, task_uuid):
     return render(request, "boards/board_form.html", {"form": form})
 
 
-def preserve_order(uuids):
-    return Case(*[When(uuid=uuid, then=o) for o, uuid in enumerate(uuids)])
-
-
 class MultipleUUIDsField(forms.TypedMultipleChoiceField):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,6 +111,14 @@ class MultipleUUIDsField(forms.TypedMultipleChoiceField):
 
 class ListMoveForm(forms.Form):
     list_uuids = MultipleUUIDsField()
+
+
+def preserve_order(uuids):
+    return Case(
+        *[When(uuid=uuid, then=o) for o, uuid in enumerate(uuids)],
+        default=F("uuid"),
+        output_field=models.UUIDField()
+    )
 
 
 @require_POST
@@ -137,21 +141,32 @@ class TaskMoveForm(forms.Form):
 
 @require_POST
 def task_move(request, board_uuid):
+    from django.db import connection
+
     form = TaskMoveForm(request.POST)
     if not form.is_valid():
         return HttpResponseBadRequest(str(form.errors))
 
+    from_list = form.cleaned_data["from_list"]
     to_list = form.cleaned_data["to_list"]
     task_uuids = form.cleaned_data["task_uuids"]
-    Task.objects.filter(uuid__in=task_uuids).update(
-        order=preserve_order(task_uuids),
-        list_id=Subquery(List.objects.filter(uuid=to_list).values("id")),
-    )
+    item_uuid = form.cleaned_data["item"]
+
+    if to_list == from_list:
+        Task.objects.filter(list__uuid=to_list).update(order=preserve_order(task_uuids))
+    else:
+        Task.objects.filter(Q(uuid=item_uuid) | Q(list__uuid=to_list)).update(
+            order=preserve_order(task_uuids),
+            list_id=Subquery(List.objects.filter(uuid=to_list).order_by().values("id")),
+        )
+
+    for query in connection.queries:
+        print(query.get("time"))
     return board(request, board_uuid, partial=True)
 
 
 def task_modal(request, task_uuid):
-    task = get_object_or_404(Task, uuid=task_uuid)
+    task = get_object_or_404(Task.objects.select_related("list"), uuid=task_uuid)
     form = TaskForm(request.POST or None, instance=task)
 
     if request.method == "POST" and form.is_valid():
